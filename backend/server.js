@@ -15,8 +15,15 @@ if (!process.env.JWT_SECRET || !process.env.MONGO_URI) {
 const app = express();
 
 app.use(helmet());
-// CLIENT_URL can hold several origins separated by commas
-app.use(cors({ origin: (process.env.CLIENT_URL || 'http://localhost:5173').split(',') }));
+const allowedOrigins = [
+  'https://tnsomniventure.com',
+  'https://www.tnsomniventure.com',
+  ...(process.env.CLIENT_URL || 'http://localhost:5173,http://127.0.0.1:5173')
+    .split(',')
+    .map((origin) => origin.trim())
+    .filter(Boolean),
+];
+app.use(cors({ origin: allowedOrigins }));
 app.use(express.json());
 if (process.env.NODE_ENV !== 'production') app.use(morgan('dev'));
 
