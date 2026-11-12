@@ -171,7 +171,7 @@ export default function PropertyDetail() {
           <div className="card p-5">
             <h2 className="text-lg font-bold">{isRent ? 'Owner / dealer' : 'Seller / dealer'}</h2>
             <div className="mt-3 flex items-center gap-3">
-              <span className="flex h-12 w-12 items-center justify-center rounded-full bg-river text-lg font-bold text-white">{p.owner.name.charAt(0)}</span>
+              <span className="flex h-12 w-12 items-center justify-center rounded-full bg-river text-lg font-bold text-ink">{p.owner.name.charAt(0)}</span>
               <div>
                 <p className="font-semibold">{p.owner.name}</p>
                 <p className="text-xs text-slate-500">{p.owner.location} · Member since {new Date(p.owner.createdAt).getFullYear()}</p>

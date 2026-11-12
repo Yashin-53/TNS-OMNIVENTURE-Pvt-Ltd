@@ -245,7 +245,7 @@ export default function PostProperty() {
                 key={a}
                 onClick={() => toggleAmenity(a)}
                 aria-pressed={amenities.includes(a)}
-                className={`rounded-full border px-3.5 py-1.5 text-sm transition ${amenities.includes(a) ? 'border-river bg-river text-white' : 'border-line bg-white hover:border-river'}`}
+                className={`rounded-full border px-3.5 py-1.5 text-sm transition ${amenities.includes(a) ? 'border-river bg-river text-ink' : 'border-line bg-white hover:border-river'}`}
               >
                 {a}
               </button>

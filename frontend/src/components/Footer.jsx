@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
-import { Mail, Phone } from 'lucide-react';
+import { Mail, MapPin, Phone } from 'lucide-react';
 import Logo from './Logo';
+import siteConfig from '../data/siteConfig';
 
 export default function Footer() {
   return (
@@ -9,7 +10,7 @@ export default function Footer() {
         <div>
           <Logo light />
           <p className="mt-3 max-w-xs text-sm leading-relaxed">
-            ZameenSetu is the bridge between people who own property and people looking for one.
+            {siteConfig.name} helps property owners and buyers connect directly.
           </p>
         </div>
         <div>
@@ -24,13 +25,14 @@ export default function Footer() {
         <div>
           <h4 className="mb-3 font-semibold text-white">Contact</h4>
           <ul className="space-y-2 text-sm">
-            <li className="flex items-center gap-2"><Mail size={16} /> support@zameensetu.com</li>
-            <li className="flex items-center gap-2"><Phone size={16} /> +91 90000 00000</li>
+            <li className="flex items-start gap-2"><MapPin size={16} className="mt-0.5 shrink-0" /> {siteConfig.address}</li>
+            <li className="flex items-center gap-2"><Mail size={16} /> tnsomniventurepvtltd@gmail.com</li>
+            <li className="flex items-center gap-2"><Phone size={16} /> +91 7654556923</li>
           </ul>
         </div>
       </div>
       <div className="border-t border-white/10 py-4 text-center text-xs text-white/60">
-        © {new Date().getFullYear()} ZameenSetu. All rights reserved.
+        © {new Date().getFullYear()} {siteConfig.name}. All rights reserved.
       </div>
     </footer>
   );

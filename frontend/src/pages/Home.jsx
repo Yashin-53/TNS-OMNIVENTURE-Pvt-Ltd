@@ -81,7 +81,7 @@ export default function Home() {
                 <button
                   key={t.value}
                   onClick={() => setFilter('listingType', t.value)}
-                  className={`rounded-md px-3.5 py-1.5 text-sm font-semibold transition ${listingType === t.value ? 'bg-river text-white' : 'hover:text-river'}`}
+                  className={`rounded-md px-3.5 py-1.5 text-sm font-semibold transition ${listingType === t.value ? 'bg-river text-ink' : 'hover:text-river'}`}
                 >
                   {t.label}
                 </button>

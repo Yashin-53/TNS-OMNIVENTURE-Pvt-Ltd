@@ -1,10 +1,11 @@
 import Logo from './Logo';
+import siteConfig from '../data/siteConfig';
 
 // Two-column layout shared by Login and Register
 export default function AuthShell({ title, subtitle, children }) {
   return (
     <div className="mx-auto grid min-h-[calc(100vh-72px)] max-w-6xl lg:grid-cols-2">
-      <div className="relative hidden overflow-hidden bg-river lg:block">
+      <div className="relative hidden overflow-hidden bg-river text-ink lg:block">
         {/* bridge illustration */}
         <svg className="absolute bottom-0 left-0 w-full" viewBox="0 0 500 420" preserveAspectRatio="xMidYMax meet" aria-hidden="true">
           <circle cx="365" cy="120" r="46" fill="#F5A524" />
@@ -13,10 +14,10 @@ export default function AuthShell({ title, subtitle, children }) {
           <path d="M0 380H500" stroke="#fff" strokeWidth="6" opacity="0.9" />
           <path d="M0 400H500M0 418H500" stroke="#fff" strokeWidth="2" opacity="0.25" />
         </svg>
-        <div className="relative p-10 text-white">
+        <div className="relative p-10">
           <Logo light />
-          <h2 className="mt-12 max-w-sm text-3xl xl:text-4xl font-bold leading-tight">Where owners and buyers meet halfway.</h2>
-          <p className="mt-4 max-w-sm text-white/80">List a property, find your next home and talk directly to the person on the other side.</p>
+          <h2 className="mt-12 max-w-sm text-3xl xl:text-4xl font-bold leading-tight">Property connections, made direct.</h2>
+          <p className="mt-4 max-w-sm text-ink/80">{siteConfig.tagline}</p>
         </div>
       </div>
 

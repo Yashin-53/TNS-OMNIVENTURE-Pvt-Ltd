@@ -104,7 +104,7 @@ export default function Reviews({ propertyId, ownerId, onChange }) {
           <article key={r._id} className="py-5">
             <div className="flex items-start justify-between gap-3">
               <div className="flex items-center gap-3">
-                <span className="flex h-10 w-10 items-center justify-center rounded-full bg-river-light font-bold text-river">{r.user?.name?.charAt(0) || '?'}</span>
+                <span className="flex h-10 w-10 items-center justify-center rounded-full bg-river-light font-bold text-river-dark">{r.user?.name?.charAt(0) || '?'}</span>
                 <div>
                   <p className="font-semibold">{r.user?.name || 'Former user'}</p>
                   <p className="text-xs text-slate-500">{formatDate(r.createdAt)}</p>

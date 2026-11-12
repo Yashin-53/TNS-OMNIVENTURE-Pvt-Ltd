@@ -21,7 +21,7 @@ export default function PropertyCard({ property: p }) {
           className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
           onError={(e) => (e.currentTarget.src = PLACEHOLDER_IMG)}
         />
-        <span className={`absolute left-3 top-3 rounded-md px-2.5 py-1 text-xs font-semibold ${p.listingType === 'rent' ? 'bg-marigold text-ink' : 'bg-river text-white'}`}>
+        <span className={`absolute left-3 top-3 rounded-md px-2.5 py-1 text-xs font-semibold ${p.listingType === 'rent' ? 'bg-marigold text-ink' : 'bg-river text-ink'}`}>
           {p.listingType === 'rent' ? 'For rent' : 'For sale'}
         </span>
       </div>

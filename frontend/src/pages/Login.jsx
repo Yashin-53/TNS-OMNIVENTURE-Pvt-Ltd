@@ -4,6 +4,7 @@ import toast from 'react-hot-toast';
 import api, { errMsg } from '../api/axios';
 import { useAuth } from '../context/AuthContext';
 import AuthShell from '../components/AuthShell';
+import siteConfig from '../data/siteConfig';
 
 export default function Login() {
   const { saveSession } = useAuth();
@@ -74,7 +75,7 @@ export default function Login() {
             key={value}
             type="button"
             onClick={() => setMode(value)}
-            className={`flex-1 rounded-md py-2 text-sm font-semibold transition ${mode === value ? 'bg-river text-white' : 'hover:text-river'}`}
+            className={`flex-1 rounded-md py-2 text-sm font-semibold transition ${mode === value ? 'bg-river text-ink' : 'hover:text-river'}`}
           >
             Login with {label}
           </button>
@@ -109,7 +110,7 @@ export default function Login() {
       </form>
 
       <p className="mt-6 text-sm text-slate-600">
-        New to ZameenSetu? <Link to="/register" className="font-semibold text-river hover:underline">Create an account</Link>
+        New to {siteConfig.name}? <Link to="/register" className="font-semibold text-river hover:underline">Create an account</Link>
       </p>
     </AuthShell>
   );

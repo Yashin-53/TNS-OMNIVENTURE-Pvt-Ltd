@@ -1,7 +1,7 @@
 {
-  "name": "zameensetu-backend",
+  "name": "tns-omniventure-backend",
   "version": "1.0.0",
-  "description": "ZameenSetu REST API (Express + MongoDB)",
+  "description": "TNS OMNIVENTURE Pvt. Ltd. REST API (Express + MongoDB)",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",

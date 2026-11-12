@@ -1,6 +1,6 @@
 const cloudinary = require('../config/cloudinary');
 
-const FOLDER = 'zameensetu/properties';
+const FOLDER = 'tns-omniventure/properties';
 
 // Upload one file buffer (from multer memory storage)
 exports.uploadBuffer = (buffer, resourceType = 'image') =>

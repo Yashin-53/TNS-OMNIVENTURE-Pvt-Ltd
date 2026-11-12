@@ -75,9 +75,9 @@ const run = async () => {
   let admin = await User.findOne({ role: 'admin' });
   if (!admin) {
     admin = await User.create({
-      name: process.env.ADMIN_NAME || 'ZameenSetu Admin',
+      name: process.env.ADMIN_NAME || 'TNS Admin',
       phone: process.env.ADMIN_PHONE || '9000000001',
-      email: process.env.ADMIN_EMAIL || 'admin@zameensetu.com',
+      email: process.env.ADMIN_EMAIL || 'admin@example.com',
       password: process.env.ADMIN_PASSWORD || 'Admin@123',
       location: 'Kanpur, Uttar Pradesh',
       role: 'admin',

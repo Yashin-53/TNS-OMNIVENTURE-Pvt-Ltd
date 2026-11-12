@@ -1,6 +1,6 @@
-# ZameenSetu
+# TNS OMNIVENTURE Pvt. Ltd.
 
-A property marketplace that connects sellers with buyers. MERN stack, frontend and backend are separate apps.
+TNS OMNIVENTURE Pvt. Ltd. is a property marketplace that connects sellers with buyers. MERN stack, frontend and backend are separate apps.
 
 - `backend/`  Express 5 + MongoDB (Mongoose), MVC, REST API, JWT + bcrypt, Cloudinary uploads
 - `frontend/` React + Vite + Tailwind CSS
@@ -91,7 +91,7 @@ Errors are always `{ "message": "..." }`.
 - **Price and taxes:** a property stores a base `price` plus `stampDuty`, `registration`, `gst` percentages. The detail page lists each tax line and the total. For rent listings the price is per month.
 - **Dimension:** stored as `area` + `unit`; the detail page lets visitors switch units (sq ft, sq m, sq yd, acre, hectare). Conversion factors are in `frontend/src/utils/units.js`.
 - **Hero banner:** slides are in `frontend/src/data/constants.js` (placeholder Unsplash images). Replace with your own ad images.
-- **Media:** images/videos go to Cloudinary (folder `zameensetu/properties`), up to 10 images and 3 videos, 50 MB each. Files are removed from Cloudinary when a property/user is deleted or a file is removed while editing.
+- **Media:** images/videos go to Cloudinary (folder `tns-omniventure/properties`), up to 10 images and 3 videos, 50 MB each. Files are removed from Cloudinary when a property/user is deleted or a file is removed while editing.
 - Auth endpoints are rate limited (100 requests / 15 min / IP).
 
 ## Conventions (handy when editing with an AI agent)

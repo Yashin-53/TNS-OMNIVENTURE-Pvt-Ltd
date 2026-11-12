@@ -23,7 +23,7 @@ if (process.env.NODE_ENV !== 'production') app.use(morgan('dev'));
 // slows down password / OTP guessing
 const authLimiter = rateLimit({ windowMs: 15 * 60 * 1000, limit: 100 });
 
-app.get('/', (req, res) => res.json({ message: 'ZameenSetu API is running' }));
+app.get('/', (req, res) => res.json({ message: 'TNS OMNIVENTURE Pvt. Ltd. API is running' }));
 app.use('/api/auth', authLimiter, require('./routes/authRoutes'));
 app.use('/api/users', require('./routes/userRoutes'));
 app.use('/api/properties', require('./routes/propertyRoutes'));
