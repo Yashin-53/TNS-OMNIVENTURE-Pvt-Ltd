@@ -1,4 +1,10 @@
 const mongoose = require('mongoose');
+const indianStates = require('../utils/indianStates');
+
+const normalizeCity = (value) => {
+  if (typeof value !== 'string') return value;
+  return value.trim().replace(/\s+/g, ' ').toLowerCase().replace(/\b[a-z]/g, (letter) => letter.toUpperCase());
+};
 
 const mediaSchema = new mongoose.Schema({
   url: { type: String, required: true },
@@ -19,8 +25,13 @@ const propertySchema = new mongoose.Schema(
 
     location: {
       address: { type: String, required: [true, 'Address is required'], trim: true },
-      city: { type: String, required: [true, 'City is required'], trim: true },
-      state: { type: String, required: [true, 'State is required'], trim: true },
+      city: { type: String, required: [true, 'City is required'], set: normalizeCity },
+      state: {
+        type: String,
+        enum: { values: indianStates, message: 'Please select a valid state' },
+        required: [true, 'State is required'],
+        trim: true,
+      },
       pincode: { type: String, trim: true },
     },
 
@@ -50,6 +61,8 @@ const propertySchema = new mongoose.Schema(
   },
   { timestamps: true, toJSON: { virtuals: true }, id: false }
 );
+
+propertySchema.statics.normalizeCity = normalizeCity;
 
 propertySchema.virtual('taxAmount').get(function () {
   const t = this.taxes || {};

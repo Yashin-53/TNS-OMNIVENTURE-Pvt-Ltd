@@ -6,6 +6,7 @@ import api, { errMsg } from '../api/axios';
 import { useAuth } from '../context/AuthContext';
 import Loader from '../components/Loader';
 import { AMENITIES, PROPERTY_TYPES } from '../data/constants';
+import { INDIAN_STATES, POPULAR_CITIES } from '../data/locations';
 import { UNITS } from '../utils/units';
 import { formatFull, getPriceBreakdown } from '../utils/format';
 
@@ -56,6 +57,13 @@ export default function PostProperty() {
   const [newVideos, setNewVideos] = useState([]);
   const [loading, setLoading] = useState(isEdit);
   const [busy, setBusy] = useState(false);
+  const [cities, setCities] = useState([]);
+
+  useEffect(() => {
+    api.get('/properties/cities')
+      .then(({ data }) => setCities(data.map((item) => item.city)))
+      .catch((err) => toast.error(errMsg(err)));
+  }, []);
 
   // edit mode: load the current values
   useEffect(() => {
@@ -79,6 +87,11 @@ export default function PostProperty() {
   }, [id]);
 
   const imagePreviews = useMemo(() => newImages.map((f) => URL.createObjectURL(f)), [newImages]);
+  const citySuggestions = useMemo(
+    () => [...new Map([...cities, ...POPULAR_CITIES].map((cityName) => [cityName.toLowerCase(), cityName])).values()],
+    [cities]
+  );
+  const hasUnlistedState = form.state && !INDIAN_STATES.includes(form.state);
 
   const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
   const toggleAmenity = (a) => setAmenities((prev) => (prev.includes(a) ? prev.filter((x) => x !== a) : [...prev, a]));
@@ -182,8 +195,19 @@ export default function PostProperty() {
                 <input name="address" className="input" value={form.address} onChange={handleChange} required />
               </Field>
             </div>
-            <Field label="City"><input name="city" className="input" value={form.city} onChange={handleChange} required /></Field>
-            <Field label="State"><input name="state" className="input" value={form.state} onChange={handleChange} required /></Field>
+            <Field label="City">
+              <input name="city" list="property-cities" className="input" value={form.city} onChange={handleChange} required />
+              <datalist id="property-cities">
+                {citySuggestions.map((cityName) => <option key={cityName} value={cityName} />)}
+              </datalist>
+            </Field>
+            <Field label="State">
+              <select name="state" className="input" value={form.state} onChange={handleChange} required>
+                <option value="" disabled>Select state</option>
+                {hasUnlistedState && <option value={form.state}>{form.state}</option>}
+                {INDIAN_STATES.map((state) => <option key={state} value={state}>{state}</option>)}
+              </select>
+            </Field>
             <Field label="Pincode"><input name="pincode" className="input" value={form.pincode} onChange={handleChange} maxLength={6} inputMode="numeric" /></Field>
           </div>
         </Section>

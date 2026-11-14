@@ -9,6 +9,7 @@ router.route('/')
   .post(protect, sellerOnly, propertyMedia, property.createProperty);
 
 router.get('/mine', protect, property.getMyProperties); // keep above '/:id'
+router.get('/cities', property.getCities); // keep above '/:id'
 
 router.route('/:id')
   .get(optionalAuth, property.getProperty)

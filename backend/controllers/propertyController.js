@@ -35,12 +35,13 @@ const escapeRegex = (text) => text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 const canEdit = (user, property) =>
   user.role === 'admin' || String(property.owner._id || property.owner) === String(user._id);
 
-// GET /api/properties?q=&type=&listingType=&sort=&page=&limit=
+// GET /api/properties?q=&city=&type=&listingType=&sort=&page=&limit=
 exports.getProperties = async (req, res) => {
-  const { q, type, listingType, sort, page, limit } = req.query;
+  const { q, city, type, listingType, sort, page, limit } = req.query;
   const filter = { isActive: true };
   if (type) filter.type = type;
   if (listingType) filter.listingType = listingType;
+  if (city) filter['location.city'] = new RegExp(`^${escapeRegex(city.trim())}$`, 'i');
 
   // every word of the search must match title, location or type
   if (q) {
@@ -73,6 +74,28 @@ exports.getProperties = async (req, res) => {
   ]);
 
   res.json({ properties, total, page: pageNo, pages: Math.ceil(total / perPage) });
+};
+
+// GET /api/properties/cities
+exports.getCities = async (req, res) => {
+  const cities = await Property.aggregate([
+    {
+      $match: {
+        isActive: true,
+        'location.city': { $type: 'string', $ne: '' },
+        'location.state': { $type: 'string', $ne: '' },
+      },
+    },
+    {
+      $group: {
+        _id: { state: '$location.state', city: '$location.city' },
+        count: { $sum: 1 },
+      },
+    },
+    { $project: { _id: 0, city: '$_id.city', state: '$_id.state', count: 1 } },
+    { $sort: { count: -1, city: 1 } },
+  ]);
+  res.json(cities);
 };
 
 // GET /api/properties/mine

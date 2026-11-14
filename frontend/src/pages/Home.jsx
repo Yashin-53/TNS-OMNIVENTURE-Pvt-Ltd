@@ -20,17 +20,25 @@ export default function Home() {
   const type = params.get('type') || '';
   const listingType = params.get('listingType') || '';
   const sort = params.get('sort') || 'newest';
+  const city = params.get('city') || '';
 
   const [properties, setProperties] = useState([]);
+  const [cities, setCities] = useState([]);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
   const [pages, setPages] = useState(1);
   const [loading, setLoading] = useState(true);
 
+  useEffect(() => {
+    api.get('/properties/cities')
+      .then((res) => setCities(res.data))
+      .catch((err) => toast.error(errMsg(err)));
+  }, []);
+
   // load page 1 whenever filters change
   useEffect(() => {
     setLoading(true);
-    api.get('/properties', { params: { q, type, listingType, sort, page: 1, limit: 8 } })
+    api.get('/properties', { params: { q, city, type, listingType, sort, page: 1, limit: 8 } })
       .then((res) => {
         setProperties(res.data.properties);
         setTotal(res.data.total);
@@ -39,18 +47,18 @@ export default function Home() {
       })
       .catch((err) => toast.error(errMsg(err)))
       .finally(() => setLoading(false));
-  }, [q, type, listingType, sort]);
+  }, [q, city, type, listingType, sort]);
 
   // scroll to the list when arriving from a search or a banner link
   useEffect(() => {
     if (window.location.hash === '#listings') {
       document.getElementById('listings')?.scrollIntoView({ behavior: 'smooth' });
     }
-  }, [q, type, listingType]);
+  }, [q, city, type, listingType]);
 
   const loadMore = async () => {
     try {
-      const res = await api.get('/properties', { params: { q, type, listingType, sort, page: page + 1, limit: 8 } });
+      const res = await api.get('/properties', { params: { q, city, type, listingType, sort, page: page + 1, limit: 8 } });
       setProperties((prev) => [...prev, ...res.data.properties]);
       setPage(page + 1);
     } catch (err) {
@@ -63,6 +71,13 @@ export default function Home() {
     value ? next.set(key, value) : next.delete(key);
     setParams(next, { replace: true });
   };
+
+  const matchedCity = cities.find((item) => item.city.toLowerCase() === city.toLowerCase());
+  const selectedCity = matchedCity?.city || city;
+  const cityGroups = cities.reduce((groups, item) => {
+    (groups[item.state] ||= []).push(item);
+    return groups;
+  }, {});
 
   return (
     <>
@@ -91,12 +106,23 @@ export default function Home() {
               <option value="">All types</option>
               {PROPERTY_TYPES.map((t) => <option key={t.value} value={t.value}>{t.label}</option>)}
             </select>
+            <select value={selectedCity} onChange={(e) => setFilter('city', e.target.value)} className="input w-auto" aria-label="City">
+              <option value="">All cities</option>
+              {city && !matchedCity && <option value={city}>{city}</option>}
+              {Object.entries(cityGroups).map(([state, stateCities]) => (
+                <optgroup key={state} label={state}>
+                  {stateCities.map((item) => (
+                    <option key={`${item.state}-${item.city}`} value={item.city}>{item.city} ({item.count})</option>
+                  ))}
+                </optgroup>
+              ))}
+            </select>
             <select value={sort} onChange={(e) => setFilter('sort', e.target.value === 'newest' ? '' : e.target.value)} className="input w-auto" aria-label="Sort">
               <option value="newest">Newest first</option>
               <option value="price_asc">Price: low to high</option>
               <option value="price_desc">Price: high to low</option>
             </select>
-            {(q || type || listingType) && (
+            {(q || type || listingType || city) && (
               <button onClick={() => setParams({}, { replace: true })} className="btn btn-outline"><X size={16} /> Clear</button>
             )}
           </div>
