@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { Bath, BedDouble, Check, MapPin, Pencil, Phone, Mail, Trash2 } from 'lucide-react';
 import toast from 'react-hot-toast';
@@ -11,14 +11,17 @@ import Loader from '../components/Loader';
 import { cityState, formatDate, formatFull, getPriceBreakdown } from '../utils/format';
 import { UNITS, convertArea, formatArea } from '../utils/units';
 import { typeLabel } from '../data/constants';
+import { getVisitorId } from '../utils/visitorId';
 
 export default function PropertyDetail() {
   const { id } = useParams();
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
   const [property, setProperty] = useState(null);
   const [notFound, setNotFound] = useState(false);
   const [unit, setUnit] = useState('sqft');
+  const loadedId = useRef(null);
+  const viewSent = useRef(false);
 
   // resetUnit: show the unit the seller used when a property first opens
   const load = (resetUnit = false) =>
@@ -30,11 +33,56 @@ export default function PropertyDetail() {
       .catch(() => setNotFound(true));
 
   useEffect(() => {
-    setProperty(null);
+    const propertyChanged = loadedId.current !== id;
+    loadedId.current = id;
+    if (propertyChanged) {
+      setProperty(null);
+      window.scrollTo(0, 0);
+    }
     setNotFound(false);
-    load(true);
-    window.scrollTo(0, 0);
+    load(propertyChanged);
   }, [id, user?._id]); // reload when login state changes so dealer contact appears
+
+  const isOwnerOrAdmin = user?.role === 'admin' || (user && property?.owner?._id === user._id);
+  useEffect(() => {
+    viewSent.current = false;
+  }, [id]);
+
+  useEffect(() => {
+    if (authLoading || viewSent.current || !property || property._id !== id || !property.isActive || isOwnerOrAdmin) return undefined;
+
+    let visibleTime = 0;
+    let lastVisibleAt = document.visibilityState === 'visible' ? Date.now() : null;
+    let interval;
+    const sendView = () => {
+      if (viewSent.current) return;
+      viewSent.current = true;
+      window.clearInterval(interval);
+      api.post(`/properties/${id}/view`, { visitorId: getVisitorId() }).catch(() => {});
+    };
+    const addVisibleTime = () => {
+      if (lastVisibleAt === null) return;
+      const now = Date.now();
+      visibleTime += now - lastVisibleAt;
+      lastVisibleAt = now;
+      if (visibleTime >= 3000) sendView();
+    };
+    const onVisibilityChange = () => {
+      if (document.visibilityState === 'hidden') {
+        addVisibleTime();
+        lastVisibleAt = null;
+      } else {
+        lastVisibleAt = Date.now();
+      }
+    };
+    interval = window.setInterval(addVisibleTime, 250);
+    document.addEventListener('visibilitychange', onVisibilityChange);
+
+    return () => {
+      window.clearInterval(interval);
+      document.removeEventListener('visibilitychange', onVisibilityChange);
+    };
+  }, [id, authLoading, property?._id, property?.isActive, isOwnerOrAdmin]);
 
   if (notFound) {
     return (

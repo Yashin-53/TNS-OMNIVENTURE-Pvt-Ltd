@@ -48,6 +48,12 @@ Demo logins after `npm run seed:demo`
 - Backend limits are configured in `backend/config/mediaLimits.js`; the separately deployed frontend mirror is `frontend/src/data/mediaLimits.js`.
 - The frontend compresses photos in a canvas before upload. Cloudinary also applies incoming image/video transformations so only optimized stored assets remain. Legacy listings with too many photos or videos are reduced to these limits when edited and removed media is deleted from Cloudinary.
 
+## Visit counts
+
+A listing visit counts after its detail page has been visible for 3 seconds in total; time pauses while the tab is hidden. Each visitor is counted once per listing per 24 hours. Owners and admins are excluded, as are hidden listings. Counts appear only to the listing owner in My properties and to admins in the dashboard.
+
+The browser stores a random visitor ID, and the backend records a unique property/visitor pair. A MongoDB TTL index removes visit records after 24 hours; TTL cleanup runs about once a minute, so a record may remain slightly longer before the visitor can count again.
+
 ## Folder structure
 
 ```
@@ -80,6 +86,7 @@ frontend/src/
 | PUT / DELETE | `/api/users/me`, PUT `/api/users/me/password` | logged in |
 | GET | `/api/properties?q=&type=&listingType=&sort=&page=&limit=` | public |
 | GET | `/api/properties/:id` | public (dealer phone/email only for logged-in users) |
+| POST | `/api/properties/:id/view` | public (optional login; rate limited) |
 | GET | `/api/properties/mine` | logged in |
 | POST | `/api/properties` (multipart: fields + `images` + `videos`) | seller / admin |
 | PUT / DELETE | `/api/properties/:id` | owner / admin |

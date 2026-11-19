@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Eye, Pencil, Plus, Trash2 } from 'lucide-react';
+import { BarChart3, Eye, Pencil, Plus, Trash2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import api, { errMsg } from '../api/axios';
 import { useAuth } from '../context/AuthContext';
@@ -173,6 +173,7 @@ function MyProperties({ user }) {
           <div className="min-w-0 flex-1">
             <p className="truncate font-semibold">{p.title}</p>
             <p className="truncate text-sm text-slate-600">{cityState(p.location)} · {formatPrice(p.price)}{p.listingType === 'rent' && '/month'}</p>
+            <p className="mt-1 flex items-center gap-1 text-xs text-slate-500"><BarChart3 size={14} /> {p.views || 0} {(p.views || 0) === 1 ? 'view' : 'views'}</p>
             {!p.isActive && <p className="mt-1 text-xs font-semibold text-red-600">Hidden (account deactivated)</p>}
           </div>
           <div className="flex gap-2">

@@ -73,6 +73,7 @@ const propertySchema = new mongoose.Schema(
     isActive: { type: Boolean, default: true },
     ratingAvg: { type: Number, default: 0 },
     ratingCount: { type: Number, default: 0 },
+    views: { type: Number, default: 0, min: 0, select: false },
   },
   { timestamps: true, toJSON: { virtuals: true }, id: false }
 );

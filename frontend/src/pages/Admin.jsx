@@ -51,9 +51,10 @@ export default function Admin() {
 function UsersTable({ onChange }) {
   const [users, setUsers] = useState(null);
   const [q, setQ] = useState('');
+  const [sort, setSort] = useState('joined_desc');
 
-  const load = (search = '') =>
-    api.get('/admin/users', { params: { q: search } }).then((res) => setUsers(res.data)).catch((err) => toast.error(errMsg(err)));
+  const load = (search = q, ordering = sort) =>
+    api.get('/admin/users', { params: { q: search, sort: ordering } }).then((res) => setUsers(res.data)).catch((err) => toast.error(errMsg(err)));
 
   useEffect(() => { load(); }, []);
 
@@ -82,19 +83,32 @@ function UsersTable({ onChange }) {
 
   return (
     <div>
-      <form onSubmit={(e) => { e.preventDefault(); load(q); }} className="mb-4 flex max-w-md gap-2">
-        <div className="relative flex-1">
-          <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-          <input className="input pl-9" placeholder="Search name, phone, email, location" value={q} onChange={(e) => setQ(e.target.value)} />
-        </div>
-        <button className="btn btn-primary">Search</button>
-      </form>
+      <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-center">
+        <form onSubmit={(e) => { e.preventDefault(); load(q, sort); }} className="flex w-full gap-2 sm:flex-1">
+          <div className="relative min-w-0 flex-1">
+            <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+            <input className="input pl-9" placeholder="Search name, phone, email, location" value={q} onChange={(e) => setQ(e.target.value)} />
+          </div>
+          <button className="btn btn-primary">Search</button>
+        </form>
+        <select
+          className="input w-full sm:w-auto"
+          aria-label="Sort users"
+          value={sort}
+          onChange={(e) => { setSort(e.target.value); load(q, e.target.value); }}
+        >
+          <option value="joined_desc">Newest joined</option>
+          <option value="joined_asc">Oldest joined</option>
+          <option value="listings_desc">Most listings</option>
+          <option value="listings_asc">Fewest listings</option>
+        </select>
+      </div>
 
       {!users ? <Loader /> : (
         <div className="card overflow-x-auto">
-          <table className="w-full min-w-[640px] text-left text-sm">
+          <table className="w-full min-w-[720px] text-left text-sm">
             <thead className="border-b border-line bg-mist text-slate-600">
-              <tr><th className="p-3">User</th><th className="p-3">Role</th><th className="p-3">Location</th><th className="p-3">Joined</th><th className="p-3">Status</th><th className="p-3 text-right">Actions</th></tr>
+              <tr><th className="p-3">User</th><th className="p-3">Role</th><th className="p-3">Location</th><th className="p-3">Joined</th><th className="p-3">Listings</th><th className="p-3">Status</th><th className="p-3 text-right">Actions</th></tr>
             </thead>
             <tbody className="divide-y divide-line">
               {users.map((u) => (
@@ -103,6 +117,7 @@ function UsersTable({ onChange }) {
                   <td className="p-3 capitalize">{u.role}</td>
                   <td className="p-3">{u.location}</td>
                   <td className="p-3">{formatDate(u.createdAt)}</td>
+                  <td className="p-3">{u.listingCount || 0}</td>
                   <td className="p-3">
                     <span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${u.isActive ? 'bg-emerald-50 text-emerald-700' : 'bg-red-50 text-red-700'}`}>{u.isActive ? 'Active' : 'Deactivated'}</span>
                   </td>
@@ -118,7 +133,7 @@ function UsersTable({ onChange }) {
                   </td>
                 </tr>
               ))}
-              {users.length === 0 && <tr><td colSpan={6} className="p-8 text-center text-slate-500">No users found</td></tr>}
+              {users.length === 0 && <tr><td colSpan={7} className="p-8 text-center text-slate-500">No users found</td></tr>}
             </tbody>
           </table>
         </div>
@@ -129,10 +144,12 @@ function UsersTable({ onChange }) {
 
 function PropertiesTable({ onChange }) {
   const [properties, setProperties] = useState(null);
+  const [sort, setSort] = useState('newest');
 
-  useEffect(() => {
-    api.get('/admin/properties').then((res) => setProperties(res.data)).catch((err) => toast.error(errMsg(err)));
-  }, []);
+  const load = (ordering = sort) =>
+    api.get('/admin/properties', { params: { sort: ordering } }).then((res) => setProperties(res.data)).catch((err) => toast.error(errMsg(err)));
+
+  useEffect(() => { load(); }, []);
 
   const remove = async (p) => {
     if (!window.confirm(`Delete “${p.title}”?`)) return;
@@ -146,39 +163,56 @@ function PropertiesTable({ onChange }) {
     }
   };
 
-  if (!properties) return <Loader />;
-
   return (
-    <div className="card overflow-x-auto">
-      <table className="w-full min-w-[640px] text-left text-sm">
-        <thead className="border-b border-line bg-mist text-slate-600">
-          <tr><th className="p-3">Property</th><th className="p-3">Owner</th><th className="p-3">Price</th><th className="p-3">Status</th><th className="p-3 text-right">Actions</th></tr>
-        </thead>
-        <tbody className="divide-y divide-line">
-          {properties.map((p) => (
-            <tr key={p._id}>
-              <td className="p-3">
-                <div className="flex items-center gap-3">
-                  <img src={optimizeUrl(p.images?.[0]?.url || PLACEHOLDER_IMG, 'thumb')} alt="" className="h-14 w-20 rounded-lg object-cover" />
-                  <div><p className="font-semibold">{p.title}</p><p className="text-xs text-slate-500">{cityState(p.location)}</p></div>
-                </div>
-              </td>
-              <td className="p-3">{p.owner?.name || '-'}</td>
-              <td className="p-3">{formatPrice(p.price)}{p.listingType === 'rent' && '/mo'}</td>
-              <td className="p-3">
-                <span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${p.isActive ? 'bg-emerald-50 text-emerald-700' : 'bg-red-50 text-red-700'}`}>{p.isActive ? 'Visible' : 'Hidden'}</span>
-              </td>
-              <td className="p-3">
-                <div className="flex justify-end gap-2">
-                  <Link to={`/properties/${p._id}`} className="btn btn-outline px-3 py-1.5" aria-label="View"><Eye size={14} /></Link>
-                  <button onClick={() => remove(p)} aria-label="Delete property" className="btn btn-outline px-3 py-1.5 text-red-600 hover:border-red-600 hover:text-red-600"><Trash2 size={14} /></button>
-                </div>
-              </td>
-            </tr>
-          ))}
-          {properties.length === 0 && <tr><td colSpan={5} className="p-8 text-center text-slate-500">No properties yet</td></tr>}
-        </tbody>
-      </table>
+    <div>
+      <div className="mb-4 flex justify-end">
+        <select
+          className="input w-full sm:w-auto"
+          aria-label="Sort properties"
+          value={sort}
+          onChange={(e) => { setSort(e.target.value); load(e.target.value); }}
+        >
+          <option value="newest">Newest first</option>
+          <option value="views_desc">Most views</option>
+          <option value="views_asc">Least views</option>
+          <option value="price_asc">Price: low to high</option>
+          <option value="price_desc">Price: high to low</option>
+        </select>
+      </div>
+      {!properties ? <Loader /> : (
+        <div className="card overflow-x-auto">
+          <table className="w-full min-w-[760px] text-left text-sm">
+            <thead className="border-b border-line bg-mist text-slate-600">
+              <tr><th className="p-3">Property</th><th className="p-3">Owner</th><th className="p-3">Price</th><th className="p-3">Views</th><th className="p-3">Status</th><th className="p-3 text-right">Actions</th></tr>
+            </thead>
+            <tbody className="divide-y divide-line">
+              {properties.map((p) => (
+                <tr key={p._id}>
+                  <td className="p-3">
+                    <div className="flex items-center gap-3">
+                      <img src={optimizeUrl(p.images?.[0]?.url || PLACEHOLDER_IMG, 'thumb')} alt="" className="h-14 w-20 rounded-lg object-cover" />
+                      <div><p className="font-semibold">{p.title}</p><p className="text-xs text-slate-500">{cityState(p.location)}</p></div>
+                    </div>
+                  </td>
+                  <td className="p-3">{p.owner?.name || '-'}</td>
+                  <td className="p-3">{formatPrice(p.price)}{p.listingType === 'rent' && '/mo'}</td>
+                  <td className="p-3">{p.views || 0}</td>
+                  <td className="p-3">
+                    <span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${p.isActive ? 'bg-emerald-50 text-emerald-700' : 'bg-red-50 text-red-700'}`}>{p.isActive ? 'Visible' : 'Hidden'}</span>
+                  </td>
+                  <td className="p-3">
+                    <div className="flex justify-end gap-2">
+                      <Link to={`/properties/${p._id}`} className="btn btn-outline px-3 py-1.5" aria-label="View"><Eye size={14} /></Link>
+                      <button onClick={() => remove(p)} aria-label="Delete property" className="btn btn-outline px-3 py-1.5 text-red-600 hover:border-red-600 hover:text-red-600"><Trash2 size={14} /></button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+              {properties.length === 0 && <tr><td colSpan={6} className="p-8 text-center text-slate-500">No properties yet</td></tr>}
+            </tbody>
+          </table>
+        </div>
+      )}
     </div>
   );
 }

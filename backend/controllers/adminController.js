@@ -21,14 +21,44 @@ exports.getUsers = async (req, res) => {
     const rx = new RegExp(req.query.q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i');
     filter.$or = [{ name: rx }, { phone: rx }, { email: rx }, { location: rx }];
   }
-  res.json(await User.find(filter).sort({ createdAt: -1 }));
+
+  const validSorts = ['joined_desc', 'joined_asc', 'listings_desc', 'listings_asc'];
+  const sort = validSorts.includes(req.query.sort) ? req.query.sort : 'joined_desc';
+  const [users, listingCounts] = await Promise.all([
+    User.find(filter),
+    Property.aggregate([{ $group: { _id: '$owner', count: { $sum: 1 } } }]),
+  ]);
+  const countsByOwner = new Map(listingCounts.map(({ _id, count }) => [String(_id), count]));
+  const results = users.map((user) => ({
+    ...user.toJSON(),
+    listingCount: countsByOwner.get(String(user._id)) || 0,
+  }));
+  const joinedDate = (a, b) => new Date(b.createdAt) - new Date(a.createdAt);
+
+  results.sort((a, b) => {
+    if (sort === 'joined_asc') return new Date(a.createdAt) - new Date(b.createdAt);
+    if (sort === 'listings_desc') return (b.listingCount - a.listingCount) || joinedDate(a, b);
+    if (sort === 'listings_asc') return (a.listingCount - b.listingCount) || joinedDate(a, b);
+    return joinedDate(a, b);
+  });
+  res.json(results);
 };
 
 // GET /api/admin/properties  (includes hidden ones)
 exports.getProperties = async (req, res) => {
+  const validSorts = ['newest', 'views_desc', 'views_asc', 'price_asc', 'price_desc'];
+  const sort = validSorts.includes(req.query.sort) ? req.query.sort : 'newest';
   const properties = await Property.find()
-    .populate('owner', 'name phone')
-    .sort({ createdAt: -1 });
+    .select('+views')
+    .populate('owner', 'name phone');
+  const createdAtDesc = (a, b) => new Date(b.createdAt) - new Date(a.createdAt);
+  properties.sort((a, b) => {
+    if (sort === 'views_desc') return ((b.views || 0) - (a.views || 0)) || createdAtDesc(a, b);
+    if (sort === 'views_asc') return ((a.views || 0) - (b.views || 0)) || createdAtDesc(a, b);
+    if (sort === 'price_asc') return (a.price - b.price) || createdAtDesc(a, b);
+    if (sort === 'price_desc') return (b.price - a.price) || createdAtDesc(a, b);
+    return createdAtDesc(a, b);
+  });
   res.json(properties);
 };
 

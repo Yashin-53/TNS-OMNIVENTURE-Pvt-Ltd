@@ -1,5 +1,6 @@
 const Property = require('../models/Property');
 const Review = require('../models/Review');
+const ListingVisit = require('../models/ListingVisit');
 const { deletePropertyMedia } = require('./cloudinaryUpload');
 
 // Deletes a user together with their properties, media and reviews.
@@ -8,6 +9,7 @@ module.exports = async (user) => {
   for (const property of properties) await deletePropertyMedia(property);
 
   await Review.deleteMany({ property: { $in: properties.map((p) => p._id) } });
+  await ListingVisit.deleteMany({ property: { $in: properties.map((p) => p._id) } });
   await Property.deleteMany({ owner: user._id });
 
   // reviews written by this user on other people's properties

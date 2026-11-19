@@ -1,5 +1,7 @@
 const Property = require('../models/Property');
 const Review = require('../models/Review');
+const ListingVisit = require('../models/ListingVisit');
+const mongoose = require('mongoose');
 const httpError = require('../utils/httpError');
 const { uploadFiles, deleteFiles, deletePropertyMedia } = require('../utils/cloudinaryUpload');
 const { MAX_IMAGES, MAX_VIDEOS } = require('../config/mediaLimits');
@@ -101,8 +103,33 @@ exports.getCities = async (req, res) => {
 
 // GET /api/properties/mine
 exports.getMyProperties = async (req, res) => {
-  const properties = await Property.find({ owner: req.user._id }).sort({ createdAt: -1 });
+  const properties = await Property.find({ owner: req.user._id }).select('+views').sort({ createdAt: -1 });
   res.json(properties);
+};
+
+// POST /api/properties/:id/view
+exports.recordView = async (req, res) => {
+  const visitorId = req.body?.visitorId;
+  if (typeof visitorId !== 'string' || !/^[A-Za-z0-9-]{16,64}$/.test(visitorId)) {
+    return res.status(400).json({ message: 'visitorId must be 16 to 64 letters, numbers, or hyphens' });
+  }
+  if (!mongoose.isValidObjectId(req.params.id)) return res.json({ counted: false });
+
+  const property = await Property.findById(req.params.id).select('owner isActive');
+  if (!property || !property.isActive) return res.json({ counted: false });
+  if (req.user && (req.user.role === 'admin' || String(property.owner) === String(req.user._id))) {
+    return res.json({ counted: false });
+  }
+
+  try {
+    await ListingVisit.create({ property: property._id, visitorId });
+  } catch (err) {
+    if (err.code === 11000) return res.json({ counted: false });
+    throw err;
+  }
+
+  await Property.updateOne({ _id: property._id }, { $inc: { views: 1 } }, { timestamps: false });
+  res.json({ counted: true });
 };
 
 // GET /api/properties/:id  (dealer phone/email are hidden from guests)
@@ -216,6 +243,7 @@ exports.deleteProperty = async (req, res) => {
 
   await deletePropertyMedia(property);
   await Review.deleteMany({ property: property._id });
+  await ListingVisit.deleteMany({ property: property._id });
   await property.deleteOne();
   res.json({ message: 'Property deleted' });
 };
