@@ -41,6 +41,13 @@ Demo logins after `npm run seed:demo`
 
 `frontend/.env`: `VITE_API_URL` (default `http://localhost:5000/api`).
 
+## Media limits
+
+- Photos: up to 4 per property, JPG/PNG/WebP only, 10 MB or less per uploaded file. Images are stored at a maximum 1600 px edge with quality-based compression and a target of about 1 MB.
+- Video: up to 1 per property, MP4/MOV/WebM only, 2 minutes or less, and 10 MB or less as uploaded. Stored videos are resized to at most 720 px high with a target of about 5 MB.
+- Backend limits are configured in `backend/config/mediaLimits.js`; the separately deployed frontend mirror is `frontend/src/data/mediaLimits.js`.
+- The frontend compresses photos in a canvas before upload. Cloudinary also applies incoming image/video transformations so only optimized stored assets remain. Legacy listings with too many photos or videos are reduced to these limits when edited and removed media is deleted from Cloudinary.
+
 ## Folder structure
 
 ```
@@ -91,7 +98,7 @@ Errors are always `{ "message": "..." }`.
 - **Price and taxes:** a property stores a base `price` plus `stampDuty`, `registration`, `gst` percentages. The detail page lists each tax line and the total. For rent listings the price is per month.
 - **Dimension:** stored as `area` + `unit`; the detail page lets visitors switch units (sq ft, sq m, sq yd, acre, hectare). Conversion factors are in `frontend/src/utils/units.js`.
 - **Hero banner:** slides are in `frontend/src/data/constants.js` (placeholder Unsplash images). Replace with your own ad images.
-- **Media:** images/videos go to Cloudinary (folder `tns-omniventure/properties`), up to 10 images and 3 videos, 50 MB each. Files are removed from Cloudinary when a property/user is deleted or a file is removed while editing.
+- **Media:** limits and Cloudinary delivery settings are described in the Media limits section below. Files are removed from Cloudinary when a property/user is deleted or a file is removed while editing.
 - Auth endpoints are rate limited (100 requests / 15 min / IP).
 
 ## Conventions (handy when editing with an AI agent)

@@ -6,6 +6,7 @@ import api, { errMsg } from '../api/axios';
 import { useAuth } from '../context/AuthContext';
 import Loader from '../components/Loader';
 import { cityState, formatPrice, formatDate, PLACEHOLDER_IMG } from '../utils/format';
+import { optimizeUrl } from '../utils/cloudinaryUrl';
 
 export default function Profile() {
   const { user, setUser, logout } = useAuth();
@@ -168,7 +169,7 @@ function MyProperties({ user }) {
     <div className="space-y-3">
       {properties.map((p) => (
         <div key={p._id} className="card flex flex-col gap-4 p-3 sm:flex-row sm:items-center">
-          <img src={p.images[0]?.url || PLACEHOLDER_IMG} alt="" className="h-32 w-full rounded-xl object-cover sm:h-20 sm:w-28" onError={(e) => (e.currentTarget.src = PLACEHOLDER_IMG)} />
+          <img src={optimizeUrl(p.images[0]?.url || PLACEHOLDER_IMG, 'thumb')} alt="" className="h-32 w-full rounded-xl object-cover sm:h-20 sm:w-28" onError={(e) => (e.currentTarget.src = PLACEHOLDER_IMG)} />
           <div className="min-w-0 flex-1">
             <p className="truncate font-semibold">{p.title}</p>
             <p className="truncate text-sm text-slate-600">{cityState(p.location)} · {formatPrice(p.price)}{p.listingType === 'rent' && '/month'}</p>

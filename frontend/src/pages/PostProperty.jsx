@@ -9,8 +9,9 @@ import { AMENITIES, PROPERTY_TYPES } from '../data/constants';
 import { INDIAN_STATES, POPULAR_CITIES } from '../data/locations';
 import { UNITS } from '../utils/units';
 import { formatFull, getPriceBreakdown } from '../utils/format';
-
-const MAX_FILE_MB = 50;
+import { MAX_IMAGES, MAX_VIDEOS, MAX_FILE_MB, MAX_VIDEO_SECONDS } from '../data/mediaLimits';
+import { compressImage } from '../utils/compressImage';
+import { checkVideo } from '../utils/checkVideo';
 
 const emptyForm = {
   title: '', listingType: 'sale', type: 'flat',
@@ -55,6 +56,9 @@ export default function PostProperty() {
   const [removeVideos, setRemoveVideos] = useState([]);
   const [newImages, setNewImages] = useState([]);
   const [newVideos, setNewVideos] = useState([]);
+  const [newImageSizes, setNewImageSizes] = useState([]);
+  const [compressing, setCompressing] = useState(false);
+  const [uploadPercent, setUploadPercent] = useState(0);
   const [loading, setLoading] = useState(isEdit);
   const [busy, setBusy] = useState(false);
   const [cities, setCities] = useState([]);
@@ -97,15 +101,76 @@ export default function PostProperty() {
   const toggleAmenity = (a) => setAmenities((prev) => (prev.includes(a) ? prev.filter((x) => x !== a) : [...prev, a]));
   const toggleRemove = (setter, mediaId) => setter((prev) => (prev.includes(mediaId) ? prev.filter((x) => x !== mediaId) : [...prev, mediaId]));
 
-  const addFiles = (e, setter) => {
+  const keptImageCount = existingImages.filter((i) => !removeImages.includes(i._id)).length;
+  const keptVideoCount = existingVideos.filter((v) => !removeVideos.includes(v._id)).length;
+
+  const addPhotos = async (e) => {
     const files = Array.from(e.target.files);
     e.target.value = '';
-    const ok = files.filter((f) => f.size <= MAX_FILE_MB * 1024 * 1024);
-    if (ok.length < files.length) toast.error(`Files above ${MAX_FILE_MB} MB were skipped`);
-    setter((prev) => [...prev, ...ok]);
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/webp'];
+    const remaining = MAX_IMAGES - (keptImageCount + newImages.length);
+    if (remaining <= 0) {
+      toast.error('You can add up to 4 photos. Remove one to add another.');
+      return;
+    }
+    if (files.length > remaining) {
+      toast.error('You can add up to 4 photos. Remove one to add another.');
+    }
+    setCompressing(true);
+    const accepted = [];
+    const sizes = [];
+    for (const file of files.slice(0, remaining)) {
+      if (!allowedTypes.includes(file.type)) {
+        toast.error(`“${file.name}” isn’t supported. Use JPG, PNG or WebP photos.`);
+        continue;
+      }
+      if (file.size > MAX_FILE_MB * 1024 * 1024) {
+        toast.error(`“${file.name}” is ${(file.size / 1024 / 1024).toFixed(1)} MB. Photos must be 10 MB or smaller.`);
+        continue;
+      }
+      try {
+        const compressed = await compressImage(file);
+        accepted.push(compressed);
+        sizes.push({ before: file.size, after: compressed.size });
+      } catch (err) {
+        toast.error(err.message || 'Could not compress this photo.');
+      }
+    }
+    setNewImages((prev) => [...prev, ...accepted]);
+    setNewImageSizes((prev) => [...prev, ...sizes]);
+    setCompressing(false);
   };
 
-  const keptImageCount = existingImages.filter((i) => !removeImages.includes(i._id)).length;
+  const addVideo = async (e) => {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (!file) return;
+    const allowedTypes = ['video/mp4', 'video/quicktime', 'video/webm'];
+    if (keptVideoCount + newVideos.length >= MAX_VIDEOS) {
+      toast.error('Only 1 video is allowed. Remove the current one to add another.');
+      return;
+    }
+    if (!allowedTypes.includes(file.type)) {
+      toast.error(`“${file.name}” isn’t supported. Use an MP4, MOV or WebM video.`);
+      return;
+    }
+    if (file.size > MAX_FILE_MB * 1024 * 1024) {
+      toast.error(`“${file.name}” is ${(file.size / 1024 / 1024).toFixed(1)} MB. Video must be 10 MB or smaller. Try a shorter clip or a lower resolution.`);
+      return;
+    }
+    try {
+      const duration = await checkVideo(file);
+      if (duration > MAX_VIDEO_SECONDS + 1) {
+        const minutes = Math.floor(duration / 60);
+        const seconds = Math.floor(duration % 60).toString().padStart(2, '0');
+        toast.error(`“${file.name}” is ${minutes}:${seconds} long. Video must be 2 minutes or shorter.`);
+        return;
+      }
+      setNewVideos((prev) => [...prev, file]);
+    } catch (err) {
+      toast.error(err.message || `Could not read “${file.name}”.`);
+    }
+  };
   const { lines, total } = getPriceBreakdown(Number(form.price) || 0, {
     stampDuty: Number(form.stampDuty), registration: Number(form.registration), gst: Number(form.gst),
   });
@@ -126,8 +191,14 @@ export default function PostProperty() {
     }
 
     setBusy(true);
+    setUploadPercent(0);
     try {
-      const res = isEdit ? await api.put(`/properties/${id}`, data) : await api.post('/properties', data);
+      const config = { onUploadProgress: (event) => {
+        if (event.total) setUploadPercent(Math.round((event.loaded * 100) / event.total));
+      } };
+      const res = isEdit
+        ? await api.put(`/properties/${id}`, data, config)
+        : await api.post('/properties', data, config);
       toast.success(isEdit ? 'Property updated' : 'Property posted');
       navigate(`/properties/${res.data._id}`);
     } catch (err) {
@@ -282,7 +353,12 @@ export default function PostProperty() {
           </div>
         </Section>
 
-        <Section title="Photos and videos" hint={`Add at least one photo. Up to 10 photos and 3 videos, ${MAX_FILE_MB} MB each.`}>
+        <Section title="Photos and videos" hint="Photos: up to 4 (JPG, PNG or WebP, up to 10 MB each). They are compressed automatically to under 1 MB. Video: 1 clip, up to 2 minutes and 10 MB (MP4, MOV or WebM). Short clips of 30 to 60 seconds load fastest.">
+          <div className="mb-3 flex flex-wrap gap-3 text-sm font-medium text-slate-600">
+            <span>{keptImageCount + newImages.length} of {MAX_IMAGES} photos</span>
+            <span>{keptVideoCount + newVideos.length} of {MAX_VIDEOS} video</span>
+            {compressing && <span className="text-river">Compressing…</span>}
+          </div>
           <div className="flex flex-wrap gap-3">
             {existingImages.map((img) => (
               <div key={img._id} className={`relative h-24 w-32 overflow-hidden rounded-lg ${removeImages.includes(img._id) ? 'opacity-30' : ''}`}>
@@ -293,13 +369,21 @@ export default function PostProperty() {
             {newImages.map((file, i) => (
               <div key={i} className="relative h-24 w-32 overflow-hidden rounded-lg ring-2 ring-river">
                 <img src={imagePreviews[i]} alt="" className="h-full w-full object-cover" />
-                <button type="button" onClick={() => setNewImages((prev) => prev.filter((_, n) => n !== i))} aria-label="Remove photo" className="absolute right-1 top-1 rounded-full bg-ink/80 p-1 text-white"><X size={14} /></button>
+                <button type="button" onClick={() => {
+                  setNewImages((prev) => prev.filter((_, n) => n !== i));
+                  setNewImageSizes((prev) => prev.filter((_, n) => n !== i));
+                }} aria-label="Remove photo" className="absolute right-1 top-1 rounded-full bg-ink/80 p-1 text-white"><X size={14} /></button>
+                {newImageSizes[i] && (
+                  <span className="absolute bottom-0 left-0 right-0 bg-ink/70 px-1 py-0.5 text-center text-[10px] text-white">
+                    {(newImageSizes[i].before / 1024 / 1024).toFixed(1)} MB → {newImageSizes[i].after < 1024 * 1024 ? `${Math.round(newImageSizes[i].after / 1024)} KB` : `${(newImageSizes[i].after / 1024 / 1024).toFixed(1)} MB`}
+                  </span>
+                )}
               </div>
             ))}
-            {keptImageCount + newImages.length < 10 && (
+            {keptImageCount + newImages.length < MAX_IMAGES && (
               <label className="flex h-24 w-32 cursor-pointer flex-col items-center justify-center gap-1 rounded-lg border-2 border-dashed border-line text-sm text-slate-500 hover:border-river hover:text-river">
                 <ImagePlus size={22} /> Add photos
-                <input type="file" accept="image/*" multiple className="hidden" onChange={(e) => addFiles(e, setNewImages)} />
+                <input type="file" accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp" multiple className="hidden" onChange={addPhotos} />
               </label>
             )}
           </div>
@@ -317,17 +401,17 @@ export default function PostProperty() {
                 <button type="button" onClick={() => setNewVideos((prev) => prev.filter((_, n) => n !== i))} aria-label="Remove video"><X size={16} /></button>
               </div>
             ))}
-            {existingVideos.length - removeVideos.length + newVideos.length < 3 && (
+            {keptVideoCount + newVideos.length < MAX_VIDEOS && (
               <label className="btn btn-outline cursor-pointer">
                 <Video size={16} /> Add video
-                <input type="file" accept="video/*" className="hidden" onChange={(e) => addFiles(e, setNewVideos)} />
+                <input type="file" accept=".mp4,.mov,.webm,video/mp4,video/quicktime,video/webm" className="hidden" onChange={addVideo} />
               </label>
             )}
           </div>
         </Section>
 
         <div className="flex gap-3">
-          <button disabled={busy} className="btn btn-primary px-8">{busy ? 'Saving…' : isEdit ? 'Save changes' : 'Post property'}</button>
+          <button disabled={busy} className="btn btn-primary px-8">{busy ? (uploadPercent > 0 ? `Uploading ${uploadPercent}%…` : 'Uploading…') : isEdit ? 'Save changes' : 'Post property'}</button>
           <Link to={isEdit ? `/properties/${id}` : '/'} className="btn btn-outline">Cancel</Link>
         </div>
       </form>

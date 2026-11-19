@@ -1,5 +1,6 @@
 const mongoose = require('mongoose');
 const indianStates = require('../utils/indianStates');
+const { MAX_IMAGES, MAX_VIDEOS } = require('../config/mediaLimits');
 
 const normalizeCity = (value) => {
   if (typeof value !== 'string') return value;
@@ -9,6 +10,8 @@ const normalizeCity = (value) => {
 const mediaSchema = new mongoose.Schema({
   url: { type: String, required: true },
   publicId: String, // Cloudinary id, used for deleting
+  bytes: Number,
+  duration: Number,
 });
 
 const propertySchema = new mongoose.Schema(
@@ -52,8 +55,20 @@ const propertySchema = new mongoose.Schema(
 
     highlights: [String],
     amenities: [String],
-    images: [mediaSchema],
-    videos: [mediaSchema],
+    images: {
+      type: [mediaSchema],
+      validate: {
+        validator: (value) => value.length <= MAX_IMAGES,
+        message: 'A property can have at most 4 photos',
+      },
+    },
+    videos: {
+      type: [mediaSchema],
+      validate: {
+        validator: (value) => value.length <= MAX_VIDEOS,
+        message: 'A property can have only 1 video',
+      },
+    },
 
     isActive: { type: Boolean, default: true },
     ratingAvg: { type: Number, default: 0 },

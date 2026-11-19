@@ -5,6 +5,8 @@ import toast from 'react-hot-toast';
 import api, { errMsg } from '../api/axios';
 import Loader from '../components/Loader';
 import { cityState, formatDate, formatPrice } from '../utils/format';
+import { optimizeUrl } from '../utils/cloudinaryUrl';
+import { PLACEHOLDER_IMG } from '../utils/format';
 
 export default function Admin() {
   const [tab, setTab] = useState('users');
@@ -155,7 +157,12 @@ function PropertiesTable({ onChange }) {
         <tbody className="divide-y divide-line">
           {properties.map((p) => (
             <tr key={p._id}>
-              <td className="p-3"><p className="font-semibold">{p.title}</p><p className="text-xs text-slate-500">{cityState(p.location)}</p></td>
+              <td className="p-3">
+                <div className="flex items-center gap-3">
+                  <img src={optimizeUrl(p.images?.[0]?.url || PLACEHOLDER_IMG, 'thumb')} alt="" className="h-14 w-20 rounded-lg object-cover" />
+                  <div><p className="font-semibold">{p.title}</p><p className="text-xs text-slate-500">{cityState(p.location)}</p></div>
+                </div>
+              </td>
               <td className="p-3">{p.owner?.name || '-'}</td>
               <td className="p-3">{formatPrice(p.price)}{p.listingType === 'rent' && '/mo'}</td>
               <td className="p-3">

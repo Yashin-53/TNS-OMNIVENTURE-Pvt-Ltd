@@ -3,6 +3,7 @@ import { Bath, BedDouble, MapPin, Ruler, Star } from 'lucide-react';
 import { cityState, formatPrice, getPriceBreakdown, PLACEHOLDER_IMG } from '../utils/format';
 import { formatArea, unitLabel } from '../utils/units';
 import { typeLabel } from '../data/constants';
+import { optimizeUrl } from '../utils/cloudinaryUrl';
 
 export default function PropertyCard({ property: p }) {
   const { total } = getPriceBreakdown(p.price, p.taxes);
@@ -15,7 +16,7 @@ export default function PropertyCard({ property: p }) {
     >
       <div className="relative h-52 shrink-0 overflow-hidden bg-river-light xl:h-auto xl:min-h-[230px] xl:w-[40%]">
         <img
-          src={p.images?.[0]?.url || PLACEHOLDER_IMG}
+          src={optimizeUrl(p.images?.[0]?.url || PLACEHOLDER_IMG, 'card')}
           alt=""
           loading="lazy"
           className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"

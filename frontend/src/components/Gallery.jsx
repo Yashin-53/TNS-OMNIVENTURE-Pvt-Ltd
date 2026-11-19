@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { ChevronLeft, ChevronRight, Play } from 'lucide-react';
 import { PLACEHOLDER_IMG } from '../utils/format';
+import { optimizeUrl } from '../utils/cloudinaryUrl';
 
 // Main viewer + thumbnail strip. Handles both images and videos.
 export default function Gallery({ images = [], videos = [], title }) {
@@ -18,9 +19,9 @@ export default function Gallery({ images = [], videos = [], title }) {
     <div>
       <div className="relative aspect-[16/10] overflow-hidden rounded-2xl bg-ink">
         {current.kind === 'image' ? (
-          <img src={current.url} alt={title} className="h-full w-full object-cover" onError={(e) => (e.currentTarget.src = PLACEHOLDER_IMG)} />
+          <img src={optimizeUrl(current.url, 'detail')} alt={title} className="h-full w-full object-cover" onError={(e) => (e.currentTarget.src = PLACEHOLDER_IMG)} />
         ) : (
-          <video key={current.url} src={current.url} controls className="h-full w-full bg-black object-contain" />
+          <video key={current.url} src={current.url} controls preload="metadata" className="h-full w-full bg-black object-contain" />
         )}
 
         {media.length > 1 && (
@@ -42,7 +43,7 @@ export default function Gallery({ images = [], videos = [], title }) {
               className={`relative h-16 w-24 shrink-0 overflow-hidden rounded-lg border-2 bg-ink ${i === index ? 'border-river' : 'border-transparent opacity-70 hover:opacity-100'}`}
             >
               {m.kind === 'image' ? (
-                <img src={m.url} alt="" className="h-full w-full object-cover" onError={(e) => (e.currentTarget.src = PLACEHOLDER_IMG)} />
+                <img src={optimizeUrl(m.url, 'thumb')} alt="" className="h-full w-full object-cover" onError={(e) => (e.currentTarget.src = PLACEHOLDER_IMG)} />
               ) : (
                 <span className="flex h-full w-full items-center justify-center text-white"><Play size={22} /></span>
               )}
